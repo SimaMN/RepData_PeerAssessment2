@@ -98,7 +98,10 @@ ggplot(injuryGroupedData, aes(x=EVTYPE, y=INJURIES)) +
   ylab("Injuries") +
   ggtitle("Total Injuries")
 ```
+
+
 #Which type of Events have the greatest Economic consequences?
+
 ```{r, echo = TRUE}
  
 #Convert economic impact to monitary value.
