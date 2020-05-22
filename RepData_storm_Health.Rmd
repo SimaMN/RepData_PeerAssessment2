@@ -1,0 +1,135 @@
+#Reproducible Research: Course Project 2
+
+Sima N
+May 21, 2020 
+
+
+##Synopsis
+This report explores the U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database to identify when and where major storms and weather events occur in the United States, and what is the estimate of any fatalities, injuries, and property damage.
+
+1 - which types of events are most harmful to population health?
+
+2 - which types of events have the greatest economic consequences?
+
+Results show that tornados are the most damaging weather type to population health; and floods are the most damaging weather event.
+
+knitr::opts_chunk$set(warning=FALSE)
+
+##Data Processing
+##Loading the data into R
+
+```{r, echo = TRUE}
+
+#add libraries 
+library(ggplot2)
+library(dplyr)
+library(knitr)
+
+
+#download data
+url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+download.file(url, destfile ='repdata-data-StormData.csv.bz2')
+
+#read data
+stormdata <- read.csv("repdata-data-StormData.csv.bz2")
+head(stormdata)
+
+```
+#variables used in the analysis:
+
+EVTYPE: Event Type (Tornados, Flood, ..)
+
+FATALITIES: Number of Fatalities
+
+INJURIES: Number of Injuries
+
+PROGDMG: Property Damage
+
+PROPDMGEXP: Units for Property Damage (magnitudes - K,B,M)
+
+CROPDMG: Crop Damage
+
+CROPDMGEXP: Units for Crop Damage (magnitudes - K,BM,B)
+```{r, echo = TRUE}
+
+varsNedeed <- c("EVTYPE", "FATALITIES", "INJURIES", "PROPDMG", "PROPDMGEXP", "CROPDMG", "CROPDMGEXP")
+storm <- stormdata[varsNedeed]
+dim(storm)
+
+```
+#Results
+
+#Which events are most harmful to population Health?
+#Fatalities Data
+
+```{r, echo = TRUE}
+
+fatalityData <- (subset(stormdata, FATALITIES > 0))[c(8, 23)]
+fatalityGroupedData <- aggregate(FATALITIES ~ EVTYPE, data = fatalityData, FUN = "sum", na.rm = TRUE)
+fatalityGroupedData <- fatalityGroupedData[order(fatalityGroupedData$FATALITIES, decreasing=TRUE), ]
+fatalityGroupedData <- fatalityGroupedData[1:5, ]
+fatalityGroupedData$EVTYPE <- factor(fatalityGroupedData$EVTYPE, levels=fatalityGroupedData$EVTYPE)
+```
+
+#Injuries Data
+```{r, echo = TRUE}
+injuryData <- (subset(stormdata, INJURIES > 0))[c(8, 24)]
+injuryGroupedData <- aggregate(INJURIES ~ EVTYPE, data = injuryData, FUN = "sum", na.rm = TRUE)
+injuryGroupedData <- injuryGroupedData[order(injuryGroupedData$INJURIES, decreasing=TRUE), ]
+injuryGroupedData <- injuryGroupedData[1:5, ]
+injuryGroupedData$EVTYPE <- factor(injuryGroupedData$EVTYPE, levels=injuryGroupedData$EVTYPE)
+```
+
+#ploting the results
+
+```{r, echo = TRUE}
+
+ggplot(fatalityGroupedData, aes(x=EVTYPE, y=FATALITIES)) +
+  geom_bar(stat="identity") +
+  xlab("Types") + 
+  ylab("Fatalities") +
+  ggtitle("Total Fatalities")
+
+
+
+ggplot(injuryGroupedData, aes(x=EVTYPE, y=INJURIES)) +
+  geom_bar(stat="identity") +
+  xlab("Types") + 
+  ylab("Injuries") +
+  ggtitle("Total Injuries")
+```
+#Which type of Events have the greatest Economic consequences?
+```{r, echo = TRUE}
+ 
+#Convert economic impact to monitary value.
+damageAmount <- function(amount, magnitude)
+{
+  returnAmount <- 0
+  if (toupper(magnitude)[1]=="K")
+  {
+    returnAmount <- (amount * 1000)
+  }
+  if (toupper(magnitude)[1]=="M")
+  {
+    returnAmount <- (amount * 1000000)
+  }
+  if (toupper(magnitude)[1]=="B")
+  {
+    returnAmount <- (amount * 1000000000)
+  }
+  return(returnAmount)
+}
+
+damageData <- (subset(stormdata, PROPDMG > 0 | CROPDMG > 0))[c(8, 25, 26, 27, 28)]
+damageData$DamageAmount <- ((mapply(damageAmount, damageData$PROPDMG, damageData$PROPDMGEXP)) +
+                                  (mapply(damageAmount, damageData$CROPDMG, damageData$CROPDMGEXP)))
+                          
+damageGroupedData <- aggregate(DamageAmount ~ EVTYPE, data = damageData, FUN = "sum", na.rm = TRUE)
+damageGroupedData <- damageGroupedData[order(damageGroupedData$DamageAmount, decreasing=TRUE), ]
+damageGroupedData <- damageGroupedData[1:5, ]
+damageGroupedData$EVTYPE <- factor(damageGroupedData$EVTYPE, levels=damageGroupedData$EVTYPE)
+
+#Most harmful events 
+head(damageGroupedData, 5)
+```
+                        
